@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "array_merge.h"
 #include "mergesort.h"
 
@@ -68,21 +69,27 @@ bool is_unique(int element, int* values, int size) {
 }
 
 
-// Returns an array containing the unsorted unique elements of the 2d array "values"
+// Returns an array containing the unsorted unique elements of the 2d array "values".
 int* unique_array(int num_arrays, int* sizes, int** values) {
     int* unique_values;
     int i, j, size, current_value, initial_length, final_length, filled_memory, unused_memory;
     
     // Get the inital size of memory needed for the unique_values array.
-    // Set the inital size to 1, since the first slot will store the size of the array to be returned.
-    initial_length = 1;
+    initial_length = 0;
     for (i=0; i<num_arrays; ++i) {
     	initial_length += sizes[i];
     }
-    
+
     // Initialize the array
-    unique_values = (int*) calloc(initial_length, sizeof(int));
+    // Because of the storing the size hack, we have to check if we have a singleton list and make sure we have enough room to store both.
+    if (initial_length == 1) {
+        unique_values = (int*) calloc(initial_length + 1, sizeof(int));
+    }
     
+    else {
+    	unique_values = (int*) calloc(initial_length, sizeof(int));
+    }
+
     // Loop through each array in values and add all unique elements.
     // Keep track of the current "filled" memory and "unused" memory.
     filled_memory = 1;
@@ -92,7 +99,7 @@ int* unique_array(int num_arrays, int* sizes, int** values) {
 	for (j=0; j<size; ++j) {
 	    current_value = values[i][j];
 	    if (is_unique(current_value, unique_values, filled_memory)) {
-	    	unique_values[filled_memory] = current_value;
+		unique_values[filled_memory] = current_value;
 		++filled_memory;	
 	    }
 	    else {
@@ -101,9 +108,10 @@ int* unique_array(int num_arrays, int* sizes, int** values) {
 	}
     }
     
-    // Free up the unused space for the array, if any.
-    final_length = initial_length - unused_memory;
-    unique_values = (int*) realloc(unique_values, final_length);
+    // Free up the unused space for the array, if any, and store the size of the array at index 0.
+    final_length = initial_length - unused_memory + 1;
+    unique_values = (int*) realloc(unique_values, final_length*sizeof(int));
+    unique_values[0] = final_length - 1;
 
     return (int*) unique_values;
 
@@ -111,6 +119,8 @@ int* unique_array(int num_arrays, int* sizes, int** values) {
 
 int* array_merge(int num_arrays, int* sizes, int** values) {
    int* unique_values = unique_array(num_arrays, sizes, values);
+   
+   // Increment the pointer to sort on the actual elements (first element is the size of the array).
    int* to_sort = (int*) unique_values + 1;
    mergesort(unique_values[0], to_sort);
    return (int*) unique_values;   
